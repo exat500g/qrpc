@@ -40,8 +40,7 @@ void JsonRpcServer::registerServices(const QObjectList& services)
     m_services = services;
 }
 
-void JsonRpcServer::jsonRequestReceived(const QJsonObject& request,
-                                        QObject* socket)
+void JsonRpcServer::jsonRequestReceived(const QJsonObject& request, QObject* socket)
 {
     JCON_ASSERT(request.value("jsonrpc").toString() == "2.0");
 

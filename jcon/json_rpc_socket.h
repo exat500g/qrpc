@@ -28,7 +28,7 @@ public:
     virtual int peerPort() const = 0;
 
 signals:
-    void dataReceived(const QByteArray& bytes, QObject* socket);
+    void messageReceived(const QByteArray& message,QObject* object);
     void socketConnected(QObject* socket);
     void socketDisconnected(QObject* socket);
     void socketError(QObject* socket, QAbstractSocket::SocketError error);

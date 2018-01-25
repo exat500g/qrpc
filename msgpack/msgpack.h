@@ -16,7 +16,7 @@ namespace MsgPack
     MSGPACK_EXPORT bool registerPacker(int qType, qint8 msgpackType, pack_user_f packer);
     MSGPACK_EXPORT qint8 msgpackType(int qType);
 
-    MSGPACK_EXPORT bool registerType(QMetaType::Type qType, quint8 msgpackType);
+    //MSGPACK_EXPORT bool registerType(QMetaType::Type qType, quint8 msgpackType);
 
     MSGPACK_EXPORT void setCompatibilityModeEnabled(bool enabled);
 } // MsgPack

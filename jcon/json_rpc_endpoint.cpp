@@ -9,9 +9,6 @@
 
 namespace jcon {
 
-/// Remove \p n bytes from \p bytes.
-static QByteArray chopLeft(const QByteArray& bytes, int n);
-
 JsonRpcEndpoint::JsonRpcEndpoint(std::shared_ptr<JsonRpcSocket> socket,
                                  std::shared_ptr<JsonRpcLogger> logger,
                                  QObject* parent)
@@ -25,8 +22,8 @@ JsonRpcEndpoint::JsonRpcEndpoint(std::shared_ptr<JsonRpcSocket> socket,
     connect(m_socket.get(), &JsonRpcSocket::socketDisconnected,
             this, &JsonRpcEndpoint::socketDisconnected);
 
-    connect(m_socket.get(), &JsonRpcSocket::dataReceived,
-            this, &JsonRpcEndpoint::dataReady);
+    connect(m_socket.get(), &JsonRpcSocket::messageReceived,
+            this, &JsonRpcEndpoint::messageReceived);
 
     connect(m_socket.get(), &JsonRpcSocket::socketError,
             this, &JsonRpcEndpoint::socketError);
@@ -122,61 +119,19 @@ void JsonRpcEndpoint::send(const QJsonDocument& doc)
     m_socket->send(bytes);
 }
 
-void JsonRpcEndpoint::dataReady(const QByteArray& bytes, QObject* socket)
+void JsonRpcEndpoint::messageReceived(const QByteArray& _message,QObject* object)
 {
-    JCON_ASSERT(bytes.length() > 0);
+    QByteArray message=_message;
+    JCON_ASSERT(message.length() > 0);
     // Copying data to new buffer, because the endpoint buffer may be
     // invalidated at any time by closing socket from outside which will cause
     // an exception.
-    m_recv_buffer += QByteArray::fromRawData(bytes.data(), bytes.size());
-    m_recv_buffer = processBuffer(m_recv_buffer.trimmed(), socket);
+    auto doc = QJsonDocument::fromJson(message);
+    JCON_ASSERT(!doc.isNull());
+    JCON_ASSERT(doc.isObject());
+    if (doc.isObject())
+        emit jsonObjectReceived(doc.object(),object);
 }
 
-QByteArray JsonRpcEndpoint::processBuffer(const QByteArray& buffer,
-                                          QObject* socket)
-{
-    QByteArray buf(buffer);
-
-    JCON_ASSERT(buf[0] == '{');
-
-    bool in_string = false;
-    int brace_nesting_level = 0;
-    QByteArray json_obj;
-
-    int i = 0;
-    while (i < buf.length() ) {
-        const char curr_ch = buf[i++];
-
-        if (curr_ch == '"')
-            in_string = !in_string;
-
-        if (!in_string) {
-            if (curr_ch == '{')
-                ++brace_nesting_level;
-
-            if (curr_ch == '}') {
-                --brace_nesting_level;
-                JCON_ASSERT(brace_nesting_level >= 0);
-
-                if (brace_nesting_level == 0) {
-                    auto doc = QJsonDocument::fromJson(buf.left(i));
-                    JCON_ASSERT(!doc.isNull());
-                    JCON_ASSERT(doc.isObject());
-                    if (doc.isObject())
-                        emit jsonObjectReceived(doc.object(), socket);
-                    buf = chopLeft(buf, i);
-                    i = 0;
-                    continue;
-                }
-            }
-        }
-    }
-    return buf;
-}
-
-QByteArray chopLeft(const QByteArray& bytes, int n)
-{
-    return bytes.right(bytes.length() - n);
-}
 
 }

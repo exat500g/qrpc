@@ -3,7 +3,7 @@
 #include "msgpack.h"
 #include "private/unpack_p.h"
 #include "private/pack_p.h"
-#include "private/qt_types_p.h"
+//#include "private/qt_types_p.h"
 
 #include <QVector>
 
@@ -45,10 +45,10 @@ qint8 MsgPack::msgpackType(int qType)
     return MsgPackPrivate::msgpack_type((QMetaType::Type)qType);
 }
 
-bool MsgPack::registerType(QMetaType::Type qType, quint8 msgpackType)
+/*bool MsgPack::registerType(QMetaType::Type qType, quint8 msgpackType)
 {
     return MsgPackPrivate::register_qtype(qType, msgpackType);
-}
+}*/
 
 void MsgPack::setCompatibilityModeEnabled(bool enabled)
 {

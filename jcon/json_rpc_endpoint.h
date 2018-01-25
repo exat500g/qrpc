@@ -49,7 +49,7 @@ signals:
      * @param[in] obj The JSON object received.
      * @param[in] sender The socket identifier (e.g. a QTcpSocket*).
      */
-    void jsonObjectReceived(const QJsonObject& obj, QObject* sender);
+    void jsonObjectReceived(const QJsonObject& obj,QObject* socket);
 
     /// Emitted when the underlying socket is connected.
     void socketConnected(QObject* socket);
@@ -61,16 +61,11 @@ signals:
     void socketError(QObject* socket, QAbstractSocket::SocketError error);
 
 private slots:
-    void dataReady(const QByteArray& bytes, QObject* socket);
+    void messageReceived(const QByteArray& message, QObject *object);
 
 private:
-    /** Check buffer for complete JSON objects, and emit jsonObjectReceived for
-        each one. */
-    QByteArray processBuffer(const QByteArray& buf, QObject* socket);
-
     std::shared_ptr<JsonRpcLogger> m_logger;
     std::shared_ptr<JsonRpcSocket> m_socket;
-    QByteArray m_recv_buffer;
 };
 
 }

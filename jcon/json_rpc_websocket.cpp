@@ -35,8 +35,8 @@ void JsonRpcWebSocket::setupSocket()
         emit socketDisconnected(m_socket);
     });
 
-    connect(m_socket, &QWebSocket::textMessageReceived,
-            this, &JsonRpcWebSocket::dataReady);
+    connect(m_socket, &QWebSocket::binaryMessageReceived,
+            this, &JsonRpcWebSocket::onMessageReceived);
 
     void (QWebSocket::*errorPtr)(QAbstractSocket::SocketError) =
         &QWebSocket::error;
@@ -82,7 +82,7 @@ bool JsonRpcWebSocket::isConnected() const
 
 size_t JsonRpcWebSocket::send(const QByteArray& data)
 {
-    return m_socket->sendTextMessage(data);
+    return m_socket->sendBinaryMessage(data);
 }
 
 QString JsonRpcWebSocket::errorString() const
@@ -110,9 +110,8 @@ int JsonRpcWebSocket::peerPort() const
     return m_socket->peerPort();
 }
 
-void JsonRpcWebSocket::dataReady(const QString& data)
-{
-    emit dataReceived(data.toUtf8(), m_socket);
+void JsonRpcWebSocket::onMessageReceived(const QByteArray &message){
+    emit messageReceived(message,m_socket);
 }
 
 }

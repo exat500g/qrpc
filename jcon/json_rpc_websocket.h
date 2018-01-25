@@ -40,11 +40,9 @@ public:
     QHostAddress peerAddress() const override;
     int peerPort() const override;
 
-private slots:
-    void dataReady(const QString& data);
-
 private:
     void setupSocket();
+    Q_INVOKABLE void onMessageReceived(const QByteArray &message);
 
     QWebSocket* m_socket;
 };
