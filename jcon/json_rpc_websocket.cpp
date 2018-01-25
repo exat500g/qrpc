@@ -1,9 +1,9 @@
 #include "json_rpc_websocket.h"
 #include "jcon_assert.h"
 
-#include <QSignalSpy>
 #include <QTime>
 #include <QWebSocket>
+#include <QCoreApplication>
 
 namespace jcon {
 
@@ -63,12 +63,11 @@ void JsonRpcWebSocket::connectToUrl(const QUrl& url)
 bool JsonRpcWebSocket::waitForConnected(int msecs)
 {
     QTime timer(0, 0, 0, msecs);
-    QSignalSpy spy(m_socket, &QWebSocket::connected);
     timer.start();
-    while (spy.isEmpty() && timer.elapsed() < msecs) {
+    while (this->isConnected()==false && timer.elapsed() < msecs) {
         QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
     }
-    return !spy.isEmpty();
+    return isConnected();
 }
 
 void JsonRpcWebSocket::disconnectFromHost()

@@ -1,8 +1,6 @@
 #include "example_service.h"
 
 #include <jcon/json_rpc_file_logger.h>
-#include <jcon/json_rpc_tcp_client.h>
-#include <jcon/json_rpc_tcp_server.h>
 #include <jcon/json_rpc_websocket_client.h>
 #include <jcon/json_rpc_websocket_server.h>
 
@@ -15,13 +13,10 @@
 #include <iostream>
 #include <memory>
 
-void startServer(QObject* parent, bool tcp = true)
+void startServer(QObject* parent)
 {
     jcon::JsonRpcServer* rpc_server;
-    if (tcp) {
-        qDebug() << "Creating TCP server";
-        rpc_server = new jcon::JsonRpcTcpServer(parent);
-    } else {
+    {
         qDebug() << "Creating WebSocket server";
         rpc_server = new jcon::JsonRpcWebSocketServer(parent);
     }
@@ -30,13 +25,10 @@ void startServer(QObject* parent, bool tcp = true)
     rpc_server->listen(6002);
 }
 
-jcon::JsonRpcClient* startClient(QObject* parent, bool tcp = true)
+jcon::JsonRpcClient* startClient(QObject* parent)
 {
     jcon::JsonRpcClient* rpc_client;
-    if (tcp) {
-        rpc_client = new jcon::JsonRpcTcpClient(parent);
-        rpc_client->connectToServer("127.0.0.1", 6002);
-    } else {
+    {
         rpc_client = new jcon::JsonRpcWebSocketClient(parent);
         // This is just to illustrate the fact that connectToServer also accepts
         // a QUrl argument.
@@ -113,8 +105,8 @@ int main(int argc, char* argv[])
 {
     QCoreApplication app(argc, argv);
 
-    startServer(&app, false);
-    auto rpc_client = startClient(&app, false);
+    startServer(&app);
+    auto rpc_client = startClient(&app);
 
     invokeNotification(rpc_client);
     invokeMethodAsync(rpc_client);

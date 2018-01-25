@@ -1,4 +1,4 @@
-QT           += widgets network testlib websockets
+QT           += widgets network websockets
 CONFIG += c++11 c++14
 
 HEADERS       = \ 
@@ -16,9 +16,6 @@ HEADERS       = \
     jcon/json_rpc_server.h \
     jcon/json_rpc_socket.h \
     jcon/json_rpc_success.h \
-    jcon/json_rpc_tcp_client.h \
-    jcon/json_rpc_tcp_server.h \
-    jcon/json_rpc_tcp_socket.h \
     jcon/json_rpc_websocket.h \
     jcon/json_rpc_websocket_client.h \
     jcon/json_rpc_websocket_server.h \
@@ -34,9 +31,6 @@ SOURCES       = main.cpp \
     jcon/json_rpc_request.cpp \
     jcon/json_rpc_server.cpp \
     jcon/json_rpc_success.cpp \
-    jcon/json_rpc_tcp_client.cpp \
-    jcon/json_rpc_tcp_server.cpp \
-    jcon/json_rpc_tcp_socket.cpp \
     jcon/json_rpc_websocket.cpp \
     jcon/json_rpc_websocket_client.cpp \
     jcon/json_rpc_websocket_server.cpp \
