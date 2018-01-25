@@ -2,7 +2,7 @@
 #include "jcon_assert.h"
 #include "json_rpc_endpoint.h"
 #include "json_rpc_error.h"
-#include "json_rpc_file_logger.h"
+#include "json_rpc_debug_logger.h"
 #include "string_util.h"
 
 #include <QJsonArray>
@@ -27,7 +27,7 @@ JsonRpcServer::JsonRpcServer(QObject* parent,
     , m_logger(logger)
 {
     if (!m_logger) {
-        m_logger = std::make_shared<JsonRpcFileLogger>("json_server_log.txt");
+        m_logger = std::make_shared<JsonRpcDebugLogger>();
     }
 }
 

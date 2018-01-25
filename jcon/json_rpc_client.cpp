@@ -1,5 +1,5 @@
 #include "json_rpc_client.h"
-#include "json_rpc_file_logger.h"
+#include "json_rpc_debug_logger.h"
 #include "json_rpc_success.h"
 #include "jcon_assert.h"
 #include "string_util.h"
@@ -23,7 +23,7 @@ JsonRpcClient::JsonRpcClient(std::shared_ptr<JsonRpcSocket> socket,
     , m_outstanding_request_count(0)
 {
     if (!m_logger) {
-        m_logger = std::make_shared<JsonRpcFileLogger>("json_client_log.txt");
+        m_logger = std::make_shared<JsonRpcDebugLogger>();
     }
 
     m_endpoint = std::make_shared<JsonRpcEndpoint>(socket, m_logger, this);

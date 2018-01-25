@@ -118,6 +118,7 @@ int JsonRpcEndpoint::peerPort() const
 void JsonRpcEndpoint::send(const QJsonDocument& doc)
 {
     QByteArray bytes = doc.toJson();
+    m_logger->logDebug(QString("%1: %2").arg(__FUNCTION__).arg(QString(bytes)));
     m_socket->send(bytes);
 }
 

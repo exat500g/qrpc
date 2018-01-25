@@ -18,3 +18,6 @@ QString ExampleService::printMessage(const QString& msg)
 void ExampleService::printNotification(const QString &msg) {
     qDebug().noquote() << QString("-> printNotification: '%1'").arg(msg);
 }
+void ExampleService::printU64(qulonglong num){
+    qDebug().noquote() << QString("-> printU64: '%1'").arg(num);
+}

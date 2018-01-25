@@ -66,6 +66,16 @@ void invokeMethodSync(jcon::JsonRpcClient* rpc_client)
     } else {
         qDebug() << "RPC error:" << result->toString();
     }
+    {
+        qDebug()<<"test printU64";
+        auto result = rpc_client->call("printU64", 4611686018427387904);
+
+        if (result->isSuccess()) {
+            qDebug() << "result of synchronous RPC call:" << result->result();
+        } else {
+            qDebug() << "RPC error:" << result->toString();
+        }
+    }
 }
 
 void invokeStringMethodAsync(jcon::JsonRpcClient* rpc_client)

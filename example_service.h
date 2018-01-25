@@ -10,6 +10,7 @@ public:
     virtual ~ExampleService(){}
 
     Q_INVOKABLE int getRandomInt(int limit);
+    Q_INVOKABLE void printU64(qulonglong num);
     Q_INVOKABLE QString printMessage(const QString& msg);
     Q_INVOKABLE void printNotification(const QString& msg);
 };
