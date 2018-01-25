@@ -114,7 +114,7 @@ int JsonRpcEndpoint::peerPort() const
 
 void JsonRpcEndpoint::send(const QJsonDocument& doc)
 {
-    QByteArray bytes = doc.toJson();
+    QByteArray bytes = doc.toBinaryData();
     m_logger->logDebug(QString("%1: %2").arg(__FUNCTION__).arg(QString(bytes)));
     m_socket->send(bytes);
 }
@@ -126,7 +126,7 @@ void JsonRpcEndpoint::messageReceived(const QByteArray& _message,QObject* object
     // Copying data to new buffer, because the endpoint buffer may be
     // invalidated at any time by closing socket from outside which will cause
     // an exception.
-    auto doc = QJsonDocument::fromJson(message);
+    auto doc = QJsonDocument::fromBinaryData(message);
     JCON_ASSERT(!doc.isNull());
     JCON_ASSERT(doc.isObject());
     if (doc.isObject())

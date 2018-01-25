@@ -2,7 +2,6 @@
 
 #include "jcon.h"
 #include "json_rpc_endpoint.h"
-#include "json_rpc_error.h"
 #include "json_rpc_logger.h"
 #include "json_rpc_request.h"
 #include "json_rpc_result.h"
