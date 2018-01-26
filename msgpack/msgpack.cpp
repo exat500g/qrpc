@@ -3,7 +3,6 @@
 #include "msgpack.h"
 #include "private/unpack_p.h"
 #include "private/pack_p.h"
-//#include "private/qt_types_p.h"
 
 #include <QVector>
 
@@ -28,24 +27,4 @@ QByteArray MsgPack::pack(const QVariant &variant)
     MsgPackPrivate::pack(variant, (quint8 *)arr.data(), true, user_data);
 
     return arr;
-}
-
-bool MsgPack::registerPacker(int qType, qint8 msgpackType, MsgPack::pack_user_f packer)
-{
-    return MsgPackPrivate::register_packer(qType, msgpackType, packer);
-}
-
-bool MsgPack::registerUnpacker(qint8 msgpackType, MsgPack::unpack_user_f unpacker)
-{
-    return MsgPackPrivate::register_unpacker(msgpackType, unpacker);
-}
-
-qint8 MsgPack::msgpackType(int qType)
-{
-    return MsgPackPrivate::msgpack_type((QMetaType::Type)qType);
-}
-
-void MsgPack::setCompatibilityModeEnabled(bool enabled)
-{
-    MsgPackPrivate::compatibilityMode = enabled;
 }

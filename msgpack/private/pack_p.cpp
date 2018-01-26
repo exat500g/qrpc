@@ -10,12 +10,9 @@
 #include <QMapIterator>
 #include <QString>
 #include <QStringList>
-#include <QReadLocker>
-#include <QWriteLocker>
+#include <QUuid>
 
-QHash<int, MsgPackPrivate::packer_t> MsgPackPrivate::user_packers;
-bool MsgPackPrivate::compatibilityMode = false;
-QReadWriteLock MsgPackPrivate::packers_lock;
+static const bool compatibilityMode=false;
 
 quint8 *MsgPackPrivate::pack(const QVariant &v, quint8 *p, bool wr, QVector<QByteArray> &user_data)
 {
@@ -46,18 +43,10 @@ quint8 *MsgPackPrivate::pack(const QVariant &v, quint8 *p, bool wr, QVector<QByt
         p = pack_bin(v.toByteArray(), p, wr);
     else if (t == QMetaType::QVariantMap)
         p = pack_map(v.toMap(), p, wr, user_data);
+    else if (t == QMetaType::QUuid)
+        p = pack_quuid(v.toUuid(), p, wr);
     else {
-        if (t == QMetaType::User)
-            t = (QMetaType::Type)v.userType();
-        QReadLocker locker(&packers_lock);
-        bool has_packer = user_packers.contains(t);
-        if (has_packer)
-            has_packer &= user_packers[t].packer != 0;
-        locker.unlock();
-        if (has_packer)
-            p = pack_user(v, p, wr, user_data);
-        else
-            qWarning() << "MsgPack::pack can't pack type:" << t;
+        qCritical() << "MsgPack::pack can't pack type:" << t;
     }
 
     return p;
@@ -321,81 +310,14 @@ quint8 *MsgPackPrivate::pack_map(const QVariantMap &map, quint8 *p, bool wr, QVe
     return p;
 }
 
-bool MsgPackPrivate::register_packer(int q_type, qint8 msgpack_type, MsgPack::pack_user_f packer)
-{
-    QWriteLocker locker(&packers_lock);
-    if (user_packers.contains(q_type)) {
-        qWarning() << "MsgPack::packer for qtype" << q_type << "already exist";
-        return false;
+quint8 *MsgPackPrivate::pack_quuid(const QUuid& uuid, quint8 *p, bool wr){
+    if (wr){
+        p[0] = 0xd8; //FIXEX16
+        p[1] = QMetaType::QUuid;
     }
-    packer_t p;
-    p.packer = packer;
-    p.type = msgpack_type;
-    user_packers.insert(q_type, p);
-    return true;
-}
-
-qint8 MsgPackPrivate::msgpack_type(QMetaType::Type q_type)
-{
-    QReadLocker locker(&packers_lock);
-    if (user_packers.contains(q_type))
-        return user_packers[q_type].type;
-    return -1;
-}
-
-quint8 *MsgPackPrivate::pack_user(const QVariant &v, quint8 *p, bool wr, QVector<QByteArray> &user_data)
-{
-    QMetaType::Type t = (QMetaType::Type)v.type() == QMetaType::User ?
-                (QMetaType::Type)v.userType() : (QMetaType::Type)v.type();
-    QReadLocker locker(&packers_lock);
-    packer_t pt = user_packers[t];
-    locker.unlock();
-
-    QByteArray data;
-    if (wr) {
-        data = user_data.front();
-        user_data.pop_front();
-
-    } else {
-        data = pt.packer(v);
-        user_data.push_back(data);
-    }
-
-    quint32 len = data.size();
-    if (len == 1) {
-        if (wr) *p = 0xd4;
-        p++;
-    } else if (len == 2) {
-        if (wr) *p = 0xd5;
-        p++;
-    } else if (len == 4) {
-        if (wr) *p = 0xd6;
-        p++;
-    } else if (len == 8) {
-        if (wr) *p = 0xd7;
-        p++;
-    } else if (len == 16) {
-        if (wr) *p = 0xd8;
-        p++;
-    } else if (len <= std::numeric_limits<quint8>::max()) {
-        if (wr) *p = 0xc7;
-        p++;
-        if (wr) *p = len;
-        p++;
-    } else if (len <= std::numeric_limits<quint16>::max()) {
-        if (wr) *p = 0xc8;
-        p++;
-        if (wr) _msgpack_store16(p, len);
-        p += 2;
-    } else {
-        if (wr) *p = 0xc9;
-        p++;
-        if (wr) _msgpack_store32(p, len);
-        p += 4;
-    }
-    if (wr) *p = pt.type;
-    p++;
-    if (wr)
-        memcpy(p, data.data(), len);
-    return p += len;
+    p+=2;
+    Q_ASSERT(uuid.toRfc4122().size()==16);
+    if (wr) memcpy(p, uuid.toRfc4122().data(), 16);
+    p += 16;
+    return p;
 }

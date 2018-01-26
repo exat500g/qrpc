@@ -341,13 +341,8 @@ quint8 * MsgPackPrivate::unpack_map32(QVariant &v, quint8 *p)
 
 quint8 *MsgPackPrivate::unpack_ext(QVariant &v, quint8 *p, qint8 type, quint32 len)
 {
-    QReadLocker locker(&unpackers_lock);
-    if (!user_unpackers.contains(type)) {
-        qWarning() << "MsgPack::unpack() unpacker for type" << type << "doesn't exist";
-        return p + len;
-    }
-    QByteArray data((char *)p, len);
-    v = user_unpackers[type](data);
+    Q_UNUSED(v);
+    qCritical() << "MsgPack::unpack() unpacker for type" << type << "doesn't exist";
     return p + len;
 }
 
@@ -374,10 +369,15 @@ quint8 * MsgPackPrivate::unpack_fixext8(QVariant &v, quint8 *p)
     qint8 type = *(++p);
     return unpack_ext(v, p + 1, type, 8);
 }
-
+#include <QUuid>
 quint8 * MsgPackPrivate::unpack_fixext16(QVariant &v, quint8 *p)
 {
     qint8 type = *(++p);
+    if(type==QMetaType::QUuid){
+        p++;
+        v=QUuid::fromRfc4122(QByteArray::fromRawData((const char*)(p),16));
+        return p+16;
+    }
     return unpack_ext(v, p + 1, type, 16);
 }
 
@@ -406,19 +406,4 @@ quint8 * MsgPackPrivate::unpack_ext32(QVariant &v, quint8 *p)
     p += 4;
     qint8 type = *(p);
     return unpack_ext(v, p + 1, type, len);
-}
-
-bool MsgPackPrivate::register_unpacker(qint8 msgpack_type, MsgPack::unpack_user_f unpacker)
-{
-    if (unpacker == 0) {
-        qWarning() << "MsgPack::unpacker for type" << msgpack_type << "is invalid";
-        return false;
-    }
-    QWriteLocker locker(&unpackers_lock);
-    if (user_unpackers.contains(msgpack_type)) {
-        qWarning() << "MsgPack::unpacker for type" << msgpack_type << "already exists";
-        return false;
-    }
-    user_unpackers.insert(msgpack_type, unpacker);
-    return true;
 }

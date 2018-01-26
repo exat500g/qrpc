@@ -108,17 +108,6 @@ void invokeStringMethodSync(jcon::JsonRpcClient* rpc_client)
 
 #include "msgpack/msgpack.h"
 
-QByteArray pack_quuid(const QVariant &variant)
-{
-    QUuid uuid = variant.toUuid();
-    return uuid.toRfc4122();
-}
-
-QVariant unpack_quuid(const QByteArray &data)
-{
-    return QUuid::fromRfc4122(data);
-}
-
 int main(int argc, char* argv[])
 {
     QCoreApplication app(argc, argv);
@@ -146,8 +135,6 @@ int main(int argc, char* argv[])
     }
 
     {
-        MsgPack::registerPacker(QMetaType::QUuid,QMetaType::QUuid,pack_quuid);
-        MsgPack::registerUnpacker(QMetaType::QUuid,unpack_quuid);
         QVariantMap map;
         map["id"]=QUuid::createUuid();
         //map["value"]="asdfsdf";
