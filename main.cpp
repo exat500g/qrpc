@@ -106,8 +106,17 @@ void invokeStringMethodSync(jcon::JsonRpcClient* rpc_client)
     }
 }
 
-void invokeNotification(jcon::JsonRpcClient *rpc_client) {
-    rpc_client->notification("printNotification", "hello, world Notification");
+#include "msgpack/msgpack.h"
+
+QByteArray pack_quuid(const QVariant &variant)
+{
+    QUuid uuid = variant.toUuid();
+    return uuid.toRfc4122();
+}
+
+QVariant unpack_quuid(const QByteArray &data)
+{
+    return QUuid::fromRfc4122(data);
 }
 
 int main(int argc, char* argv[])
@@ -117,11 +126,12 @@ int main(int argc, char* argv[])
     startServer(&app);
     auto rpc_client = startClient(&app);
 
-    invokeNotification(rpc_client);
     invokeMethodAsync(rpc_client);
     invokeMethodSync(rpc_client);
     invokeStringMethodSync(rpc_client);
     invokeStringMethodAsync(rpc_client);
+
+
 
     if (rpc_client->outstandingRequestCount() > 0) {
         qDebug().noquote() << QString("Waiting for %1 outstanding requests")
@@ -134,5 +144,21 @@ int main(int argc, char* argv[])
     } else {
         qDebug() << "No outstanding requests, quitting";
     }
+
+    {
+        MsgPack::registerPacker(QMetaType::QUuid,QMetaType::QUuid,pack_quuid);
+        MsgPack::registerUnpacker(QMetaType::QUuid,unpack_quuid);
+        QVariantMap map;
+        map["id"]=QUuid::createUuid();
+        //map["value"]="asdfsdf";
+        //map["version"]=4611686018427387905;
+        qDebug()<<"map="<<map;
+        QByteArray bin=MsgPack::pack(map);
+        {
+            QVariant res=MsgPack::unpack(bin);
+            qDebug()<<"res="<<res<<"bin.length="<<bin.length();
+        }
+    }
+
     return 0;
 }

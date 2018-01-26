@@ -23,8 +23,6 @@ class JCON_API JsonRpcClient : public QObject
     Q_OBJECT
 
 public:
-    using RequestId = QString ;
-
     JsonRpcClient(std::shared_ptr<JsonRpcSocket> socket,
                   QObject* parent = nullptr,
                   std::shared_ptr<JsonRpcLogger> logger = nullptr,
@@ -60,9 +58,6 @@ public:
     std::shared_ptr<JsonRpcRequest>
         callAsyncExpandArgs(const QString& method, const QVariantList& args);
 
-    template<typename... T>
-    void notification(const QString& method, T&&... args);
-
     int outstandingRequestCount() const;
 
 signals:
@@ -87,7 +82,7 @@ private:
     static QString formatLogMessage(const QString& method,
                                     const QVariantList& args,
                                     bool async,
-                                    const QString& request_id);
+                                    const RequestId &request_id);
 
     std::shared_ptr<JsonRpcResult>
         waitForSyncCallbacks(const JsonRpcRequest* request);
@@ -110,10 +105,8 @@ private:
     std::pair<std::shared_ptr<JsonRpcRequest>, QJsonObject>
         prepareCall(const QString& method);
 
-    std::pair<std::shared_ptr<JsonRpcRequest>, RequestId> createRequest();
-    static RequestId createUuid();
     QJsonObject createRequestJsonObject(const QString& method,
-                                        const QString& id);
+                                        const RequestId &id);
 
     QJsonObject createNotificationJsonObject(const QString& method);
 
@@ -159,12 +152,6 @@ JsonRpcClient::callAsync(const QString& method, Ts&&... args)
 }
 
 template<typename... Ts>
-void JsonRpcClient::notification(const QString& method, Ts&&... args)
-{
-    doNotification(method, std::forward<Ts>(args)...);
-}
-
-template<typename... Ts>
 std::shared_ptr<JsonRpcRequest>
 JsonRpcClient::doCall(const QString& method, bool async, Ts&&... args)
 {
@@ -179,26 +166,11 @@ JsonRpcClient::doCall(const QString& method, bool async, Ts&&... args)
     req_json_obj["params"] = QJsonArray::fromVariantList(param_list);
 
     m_logger->logInfo(
-        formatLogMessage(method, param_list, async, request->id()));
+        formatLogMessage(method, param_list, async, request->id().toString()));
 
     m_endpoint->send(QJsonDocument(req_json_obj));
 
     return request;
-}
-
-template<typename... Ts>
-void JsonRpcClient::doNotification(const QString& method, Ts&&... args)
-{
-    verifyConnected(method);
-
-    QJsonObject req_json_obj;
-    req_json_obj = createNotificationJsonObject(method);
-
-    QVariantList param_list;
-    convertToQVariantList(param_list, std::forward<Ts>(args)...);
-    req_json_obj["params"] = QJsonArray::fromVariantList(param_list);
-
-    m_endpoint->send(QJsonDocument(req_json_obj));
 }
 
 template<typename T>

@@ -3,7 +3,7 @@
 namespace jcon {
 
 JsonRpcRequest::JsonRpcRequest(QObject* parent,
-                               QString id,
+                               RequestId id,
                                QDateTime timestamp)
     : QObject(parent)
     , m_id(id)
@@ -15,7 +15,7 @@ JsonRpcRequest::~JsonRpcRequest()
 {
 }
 
-QString JsonRpcRequest::id() const
+RequestId JsonRpcRequest::id() const
 {
     return m_id;
 }

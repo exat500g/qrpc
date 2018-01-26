@@ -4,6 +4,7 @@
 
 #include <QDateTime>
 #include <QObject>
+#include <QUuid>
 
 namespace jcon {
 
@@ -13,18 +14,18 @@ class JCON_API JsonRpcRequest : public QObject
 
 public:
     JsonRpcRequest(QObject* parent,
-                   QString id,
+                   RequestId id,
                    QDateTime timestamp = QDateTime::currentDateTime());
     virtual ~JsonRpcRequest();
 
-    QString id() const;
+    RequestId id() const;
 
 signals:
     void result(const QVariant& result);
     void error(int code, const QString& message, const QVariant& data);
 
 private:
-    QString m_id;
+    RequestId m_id;
     QDateTime m_timestamp;
 };
 

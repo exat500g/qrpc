@@ -53,7 +53,7 @@ JsonRpcClient::waitForSyncCallbacks(const JsonRpcRequest* request)
             [this, id = request->id()](const QVariant& result) {
                 m_logger->logDebug(
                     QString("Received success response to synchronous "
-                            "RPC call (ID: %1)").arg(qPrintable(id)));
+                            "RPC call (ID: %1)").arg(id.toString()));
 
                 m_results[id] = std::make_shared<JsonRpcSuccess>(result);
             });
@@ -65,7 +65,7 @@ JsonRpcClient::waitForSyncCallbacks(const JsonRpcRequest* request)
             {
                 m_logger->logError(
                     QString("Received error response to synchronous "
-                            "RPC call (ID: %1)").arg(qPrintable(id)));
+                            "RPC call (ID: %1)").arg(id.toString()));
 
                 m_results[id] =
                     std::make_shared<JsonRpcError>(code, message, data);
@@ -142,43 +142,22 @@ void JsonRpcClient::verifyConnected(const QString& method)
 std::pair<std::shared_ptr<JsonRpcRequest>, QJsonObject>
 JsonRpcClient::prepareCall(const QString& method)
 {
-    std::shared_ptr<JsonRpcRequest> request;
-    RequestId id;
-    std::tie(request, id) = createRequest();
+    RequestId id=QUuid::createUuid();
+    std::shared_ptr<JsonRpcRequest> request = std::make_shared<JsonRpcRequest>(this, id);
     m_outstanding_requests[id] = request;
     ++m_outstanding_request_count;
     QJsonObject req_json_obj = createRequestJsonObject(method, id);
     return std::make_pair(request, req_json_obj);
 }
 
-std::pair<std::shared_ptr<JsonRpcRequest>, JsonRpcClient::RequestId>
-JsonRpcClient::createRequest()
-{
-    auto id = createUuid();
-    auto request = std::make_shared<JsonRpcRequest>(this, id);
-    return std::make_pair(request, id);
-}
-
-JsonRpcClient::RequestId JsonRpcClient::createUuid()
-{
-    RequestId id = QUuid::createUuid().toString();
-    int len = id.length();
-    id = id.left(len - 1).right(len - 2);
-    return id;
-}
-
 QJsonObject JsonRpcClient::createRequestJsonObject(const QString& method,
-                                                   const QString& id)
+                                                   const RequestId &id)
 {
     return QJsonObject {
         { "method", method },
-        { "id", id }
+        { "id", id.toString() }
     };
-}
-
-QJsonObject JsonRpcClient::createNotificationJsonObject(const QString& method)
-{
-    return createRequestJsonObject(method, "null");
+    QJsonObject obj;
 }
 
 bool JsonRpcClient::connectToServer(const QString& host, int port)
@@ -229,6 +208,7 @@ int JsonRpcClient::serverPort() const
 
 void JsonRpcClient::jsonResponseReceived(const QJsonObject& response)
 {
+    RequestId id = QUuid(response.value("id").toString());
     if (response.value("error").isObject()) {
         int code;
         QString msg;
@@ -236,12 +216,11 @@ void JsonRpcClient::jsonResponseReceived(const QJsonObject& response)
         getJsonErrorInfo(response, code, msg, data);
         logError(QString("(%1) - %2").arg(code).arg(msg));
 
-        RequestId id = response.value("id").toString(InvalidRequestId);
-        if (id != InvalidRequestId) {
+        {
             auto it = m_outstanding_requests.find(id);
             if (it == m_outstanding_requests.end()) {
                 logError(QString("got error response for non-existing "
-                                 "request: %1").arg(id));
+                                 "request: %1").arg(QUuid(id).toString()));
                 return;
             }
             emit it.value()->error(code, msg, data);
@@ -257,17 +236,11 @@ void JsonRpcClient::jsonResponseReceived(const QJsonObject& response)
         return;
     }
 
-    RequestId id = response.value("id").toString(InvalidRequestId);
-    if (id == InvalidRequestId) {
-        logError("response ID is undefined");
-        return;
-    }
-
     QVariant result = response.value("result").toVariant();
 
     auto it = m_outstanding_requests.find(id);
     if (it == m_outstanding_requests.end()) {
-        logError(QString("got response to non-existing request: %1").arg(id));
+        logError(QString("got response to non-existing request: %1").arg(QUuid(id).toString()));
         return;
     }
 
@@ -290,7 +263,7 @@ void JsonRpcClient::getJsonErrorInfo(const QJsonObject& response,
 QString JsonRpcClient::formatLogMessage(const QString& method,
                                         const QVariantList& args,
                                         bool async,
-                                        const QString& request_id)
+                                        const RequestId& request_id)
 {
     auto msg = QString("Calling (%1) RPC method: '%2' ")
         .arg(async ? "async" : "sync").arg(method);
@@ -302,7 +275,7 @@ QString JsonRpcClient::formatLogMessage(const QString& method,
             .arg(args.size() == 1 ? "" : "s")
             .arg(variantListToStringList(args).join(", "));
     }
-    msg += QString(" (request ID: %1)").arg(request_id);
+    msg += QString(" (request ID: %1)").arg(request_id.toString());
     return msg;
 }
 

@@ -19,3 +19,8 @@
 #else // JCON_DLL is not defined: this means JCON is a static lib.
     #define JCON_API
 #endif // JCON_DLL
+
+class QUuid;
+namespace jcon{
+    using RequestId = QUuid;
+}
