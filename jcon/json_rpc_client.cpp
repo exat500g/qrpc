@@ -155,8 +155,8 @@ QVariantMap JsonRpcClient::createRequestJsonObject(const QString& method,
                                                    const RequestId &id)
 {
     return QVariantMap {
-        { "method", method },
-        { "id", id }
+        { "m", method },
+        { "i", id }
     };
 }
 
@@ -208,7 +208,7 @@ int JsonRpcClient::serverPort() const
 
 void JsonRpcClient::jsonResponseReceived(const QVariantMap& response)
 {
-    RequestId id = response["id"].toUuid();
+    RequestId id = response["i"].toUuid();
     if (response.value("error").isValid()) {
         int code;
         QString msg;
@@ -220,7 +220,7 @@ void JsonRpcClient::jsonResponseReceived(const QVariantMap& response)
             auto it = m_outstanding_requests.find(id);
             if (it == m_outstanding_requests.end()) {
                 logError(QString("got error response for non-existing "
-                                 "request: %1").arg(QUuid(id).toString()));
+                                 "request: %1").arg(id.toString()));
                 return;
             }
             emit it.value()->error(code, msg, data);
@@ -230,7 +230,7 @@ void JsonRpcClient::jsonResponseReceived(const QVariantMap& response)
 
         return;
     }
-    QVariant result = response.value("result");
+    QVariant result = response.value("r");
 
     auto it = m_outstanding_requests.find(id);
     if (it == m_outstanding_requests.end()) {

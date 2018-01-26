@@ -134,18 +134,5 @@ int main(int argc, char* argv[])
         qDebug() << "No outstanding requests, quitting";
     }
 
-    {
-        QVariantMap map;
-        map["id"]=QUuid::createUuid();
-        //map["value"]="asdfsdf";
-        //map["version"]=4611686018427387905;
-        qDebug()<<"map="<<map;
-        QByteArray bin=MsgPack::pack(map);
-        {
-            QVariant res=MsgPack::unpack(bin);
-            qDebug()<<"res="<<res<<"bin.length="<<bin.length();
-        }
-    }
-
     return 0;
 }

@@ -39,12 +39,12 @@ void JsonRpcServer::registerServices(const QObjectList& services)
 
 void JsonRpcServer::requestReceived(const QVariantMap& request, QObject* socket)
 {
-    QString method_name = request.value("method").toString();
+    QString method_name = request.value("m").toString();
     if (method_name.isEmpty()) {
         logError("no method present in request");
         return;
     }
-    QUuid request_id = request.value("id").toUuid();
+    QUuid request_id = request.value("i").toUuid();
     QVariant params = request.value("params");
 
     QVariant return_value;
@@ -308,9 +308,9 @@ QVariantMap JsonRpcServer::createResponse(const QUuid& request_id,
                                             const QString& method_name)
 {
     QVariantMap res_json_obj {
-        { "id", request_id }
+        { "i", request_id }
     };
-    res_json_obj["result"] = return_value;
+    res_json_obj["r"] = return_value;
 
     return res_json_obj;
 }
@@ -326,7 +326,7 @@ QVariantMap JsonRpcServer::createErrorResponse(const QUuid& request_id,
 
     QVariantMap res_json_obj {
         { "error", error_object },
-        { "id", request_id }
+        { "i", request_id }
     };
     return res_json_obj;
 }
