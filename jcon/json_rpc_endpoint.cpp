@@ -115,7 +115,7 @@ int JsonRpcEndpoint::peerPort() const
 void JsonRpcEndpoint::send(const QJsonDocument& doc)
 {
     QByteArray bytes = doc.toBinaryData();
-    m_logger->logDebug(QString("%1: %2").arg(__FUNCTION__).arg(QString(bytes)));
+    m_logger->logDebug(QString("%1: %2 , len=%3").arg(__FUNCTION__).arg(QString(bytes.toHex())).arg(bytes.length()));
     m_socket->send(bytes);
 }
 

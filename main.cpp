@@ -48,7 +48,7 @@ void invokeMethodAsync(jcon::JsonRpcClient* rpc_client)
                  });
 
     req->connect(req.get(), &jcon::JsonRpcRequest::error,
-                 [](int code, const QString& message, const QVariant& data) {
+                 [](int code, const QString& message, const QVariant& ) {
                      qDebug() << "RPC error:" << message
                               << " (" << code << ")";
                  });
@@ -67,7 +67,7 @@ void invokeMethodSync(jcon::JsonRpcClient* rpc_client)
     }
     {
         qDebug()<<"test printU64";
-        auto result = rpc_client->call("printU64", 4611686018427387904);
+        auto result = rpc_client->call("printU64", 4611686018427387905);
 
         if (result->isSuccess()) {
             qDebug() << "result of synchronous RPC call:" << result->result();
@@ -87,7 +87,7 @@ void invokeStringMethodAsync(jcon::JsonRpcClient* rpc_client)
                  });
 
     req->connect(req.get(), &jcon::JsonRpcRequest::error,
-                 [](int code, const QString& message, const QVariant& data) {
+                 [](int code, const QString& message, const QVariant& ) {
                      qDebug() << "RPC error:" << message
                               << " (" << code << ")";
                  });

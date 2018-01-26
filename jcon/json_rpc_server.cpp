@@ -42,23 +42,17 @@ void JsonRpcServer::registerServices(const QObjectList& services)
 
 void JsonRpcServer::jsonRequestReceived(const QJsonObject& request, QObject* socket)
 {
-    JCON_ASSERT(request.value("jsonrpc").toString() == "2.0");
-
-    if (request.value("jsonrpc").toString() != "2.0") {
-        logError("invalid protocol tag");
-        return;
-    }
-
     QString method_name = request.value("method").toString();
     if (method_name.isEmpty()) {
         logError("no method present in request");
+        return;
     }
-
-    QVariant params = request.value("params").toVariant();
     QString request_id = request.value("id").toVariant().toString();
+    QVariant params = request.value("params").toVariant();
+
 
     QVariant return_value;
-    if (!dispatch(method_name, params, request_id, return_value)) {
+    if (!dispatch(method_name, params, return_value)) {
         auto msg = QString("method '%1' not found, check name and "
                            "parameter types ").arg(method_name);
         logError(msg);
@@ -95,11 +89,11 @@ void JsonRpcServer::jsonRequestReceived(const QJsonObject& request, QObject* soc
 
         endpoint->send(response);
     }
+
 }
 
 bool JsonRpcServer::dispatch(const QString& method_name,
                              const QVariant& params,
-                             const QString& request_id,
                              QVariant& return_value)
 {
     for (auto& s : m_services) {
@@ -318,7 +312,6 @@ QJsonDocument JsonRpcServer::createResponse(const QString& request_id,
                                             const QString& method_name)
 {
     QJsonObject res_json_obj {
-        { "jsonrpc", "2.0" },
         { "id", request_id }
     };
 
@@ -364,7 +357,6 @@ QJsonDocument JsonRpcServer::createErrorResponse(const QString& request_id,
     };
 
     QJsonObject res_json_obj {
-        { "jsonrpc", "2.0" },
         { "error", error_object },
         { "id", request_id }
     };

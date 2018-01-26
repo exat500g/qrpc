@@ -54,7 +54,6 @@ private:
 
     bool dispatch(const QString& method_name,
                   const QVariant& params,
-                  const QString& request_id,
                   QVariant& return_value);
 
     bool call(QObject* object,

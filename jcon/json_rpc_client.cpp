@@ -171,7 +171,6 @@ QJsonObject JsonRpcClient::createRequestJsonObject(const QString& method,
                                                    const QString& id)
 {
     return QJsonObject {
-        { "jsonrpc", "2.0" },
         { "method", method },
         { "id", id }
     };
@@ -230,13 +229,6 @@ int JsonRpcClient::serverPort() const
 
 void JsonRpcClient::jsonResponseReceived(const QJsonObject& response)
 {
-    JCON_ASSERT(response["jsonrpc"].toString() == "2.0");
-
-    if (response.value("jsonrpc").toString() != "2.0") {
-        logError("invalid protocol tag");
-        return;
-    }
-
     if (response.value("error").isObject()) {
         int code;
         QString msg;
