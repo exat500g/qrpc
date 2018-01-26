@@ -6,9 +6,6 @@
 #include "json_rpc_request.h"
 #include "json_rpc_result.h"
 
-#include <QJsonArray>
-#include <QJsonObject>
-#include <QJsonDocument>
 #include <QMap>
 
 #include <memory>
@@ -74,7 +71,7 @@ protected:
     void logError(const QString& msg);
 
 private slots:
-    void jsonResponseReceived(const QJsonObject& obj);
+    void jsonResponseReceived(const QVariantMap &obj);
 
 private:
     static const QString InvalidRequestId;
@@ -102,13 +99,10 @@ private:
 
     void verifyConnected(const QString& method);
 
-    std::pair<std::shared_ptr<JsonRpcRequest>, QJsonObject>
-        prepareCall(const QString& method);
+    std::pair<std::shared_ptr<JsonRpcRequest>, QVariantMap> prepareCall(const QString& method);
 
-    QJsonObject createRequestJsonObject(const QString& method,
+    QVariantMap createRequestJsonObject(const QString& method,
                                         const RequestId &id);
-
-    QJsonObject createNotificationJsonObject(const QString& method);
 
     void convertToQVariantList(QVariantList& /*result*/) {}
 
@@ -118,7 +112,7 @@ private:
     template<typename T, typename... Ts>
     void convertToQVariantList(QVariantList& result, T&& head, Ts&&... tail);
 
-    static void getJsonErrorInfo(const QJsonObject& response,
+    static void getJsonErrorInfo(const QVariantMap &response,
                                  int& code,
                                  QString& message,
                                  QVariant& data);
@@ -158,17 +152,17 @@ JsonRpcClient::doCall(const QString& method, bool async, Ts&&... args)
     verifyConnected(method);
 
     std::shared_ptr<JsonRpcRequest> request;
-    QJsonObject req_json_obj;
-    std::tie(request, req_json_obj) = prepareCall(method);
+    QVariantMap req_obj;
+    std::tie(request, req_obj) = prepareCall(method);
 
     QVariantList param_list;
     convertToQVariantList(param_list, std::forward<Ts>(args)...);
-    req_json_obj["params"] = QJsonArray::fromVariantList(param_list);
+    req_obj["params"] = param_list;
 
     m_logger->logInfo(
         formatLogMessage(method, param_list, async, request->id().toString()));
 
-    m_endpoint->send(QJsonDocument(req_json_obj));
+    m_endpoint->send(req_obj);
 
     return request;
 }

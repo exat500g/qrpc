@@ -2,10 +2,8 @@
 #include "json_rpc_socket.h"
 #include "jcon_assert.h"
 
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QTcpSocket>
 #include <QUrl>
+#include "../msgpack/msgpack.h"
 
 namespace jcon {
 
@@ -112,11 +110,11 @@ int JsonRpcEndpoint::peerPort() const
     return m_socket->peerPort();
 }
 
-void JsonRpcEndpoint::send(const QJsonDocument& doc)
+void JsonRpcEndpoint::send(const QVariantMap &map)
 {
-    QByteArray bytes = doc.toBinaryData();
-    m_logger->logDebug(QString("%1: %2 , len=%3").arg(__FUNCTION__).arg(QString(bytes)).arg(bytes.length()));
-    m_socket->send(bytes);
+    auto msgpkg=MsgPack::pack(map);
+    m_logger->logDebug(QString("%1: len=%2").arg(__FUNCTION__).arg(msgpkg.length()));
+    m_socket->send(msgpkg);
 }
 
 void JsonRpcEndpoint::messageReceived(const QByteArray& _message,QObject* object)
@@ -126,11 +124,12 @@ void JsonRpcEndpoint::messageReceived(const QByteArray& _message,QObject* object
     // Copying data to new buffer, because the endpoint buffer may be
     // invalidated at any time by closing socket from outside which will cause
     // an exception.
-    auto doc = QJsonDocument::fromBinaryData(message);
-    JCON_ASSERT(!doc.isNull());
-    JCON_ASSERT(doc.isObject());
-    if (doc.isObject())
-        emit jsonObjectReceived(doc.object(),object);
+    auto var=MsgPack::unpack(message);
+    JCON_ASSERT(!var.isNull());
+    JCON_ASSERT(var.isValid());
+    auto map=var.toMap();
+    JCON_ASSERT(!map.isEmpty());
+    emit requestReceived(map,object);
 }
 
 

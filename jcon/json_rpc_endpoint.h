@@ -40,7 +40,7 @@ public:
     QHostAddress peerAddress() const;
     int peerPort() const;
 
-    void send(const QJsonDocument& doc);
+    void send(const QVariantMap &map);
 
 signals:
     /**
@@ -49,7 +49,7 @@ signals:
      * @param[in] obj The JSON object received.
      * @param[in] sender The socket identifier (e.g. a QTcpSocket*).
      */
-    void jsonObjectReceived(const QJsonObject& obj,QObject* socket);
+    void requestReceived(const QVariantMap& obj,QObject* socket);
 
     /// Emitted when the underlying socket is connected.
     void socketConnected(QObject* socket);

@@ -38,7 +38,7 @@ signals:
     void socketError(QObject* socket, QAbstractSocket::SocketError error);
 
 public slots:
-    void jsonRequestReceived(const QJsonObject& request, QObject* socket);
+    void requestReceived(const QVariantMap &request, QObject* socket);
 
 protected slots:
     virtual void newConnection() = 0;
@@ -50,7 +50,6 @@ protected:
     std::shared_ptr<JsonRpcLogger> log() { return m_logger; }
 
 private:
-    static const QString InvalidRequestId;
 
     bool dispatch(const QString& method_name,
                   const QVariant& params,
@@ -80,10 +79,10 @@ private:
                 QVariantList& converted_args,
                 QVariant& return_value);
 
-    QJsonDocument createResponse(const QString& request_id,
+    QVariantMap createResponse(const QUuid &request_id,
                                  const QVariant& return_value,
                                  const QString& method_name);
-    QJsonDocument createErrorResponse(const QString& request_id,
+    QVariantMap createErrorResponse(const QUuid &request_id,
                                       int code,
                                       const QString& message);
 

@@ -5,11 +5,10 @@
 #include "json_rpc_logger.h"
 #include "string_util.h"
 
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
+#include "../msgpack/msgpack.h"
 #include <QVariant>
 #include <QMetaMethod>
+#include <QUuid>
 
 namespace {
     QString logInvoke(const QMetaMethod& meta_method,
@@ -18,8 +17,6 @@ namespace {
 }
 
 namespace jcon {
-
-const QString JsonRpcServer::InvalidRequestId = "";
 
 JsonRpcServer::JsonRpcServer(QObject* parent,
                              std::shared_ptr<JsonRpcLogger> logger)
@@ -40,16 +37,15 @@ void JsonRpcServer::registerServices(const QObjectList& services)
     m_services = services;
 }
 
-void JsonRpcServer::jsonRequestReceived(const QJsonObject& request, QObject* socket)
+void JsonRpcServer::requestReceived(const QVariantMap& request, QObject* socket)
 {
     QString method_name = request.value("method").toString();
     if (method_name.isEmpty()) {
         logError("no method present in request");
         return;
     }
-    QString request_id = request.value("id").toVariant().toString();
-    QVariant params = request.value("params").toVariant();
-
+    QUuid request_id = request.value("id").toUuid();
+    QVariant params = request.value("params");
 
     QVariant return_value;
     if (!dispatch(method_name, params, return_value)) {
@@ -58,8 +54,8 @@ void JsonRpcServer::jsonRequestReceived(const QJsonObject& request, QObject* soc
         logError(msg);
 
         // send error response if request had valid ID
-        if (request_id != InvalidRequestId) {
-            QJsonDocument error =
+        if (request_id.isNull()==false) {
+            QVariantMap error =
                 createErrorResponse(request_id,
                                     JsonRpcError::EC_MethodNotFound,
                                     msg);
@@ -76,8 +72,8 @@ void JsonRpcServer::jsonRequestReceived(const QJsonObject& request, QObject* soc
     }
 
     // send response if request had valid ID
-    if (request_id != InvalidRequestId) {
-        QJsonDocument response = createResponse(request_id,
+    if (request_id.isNull()==false) {
+        QVariantMap response = createResponse(request_id,
                                                 return_value,
                                                 method_name);
 
@@ -307,60 +303,32 @@ bool JsonRpcServer::doCall(QObject* object,
     return true;
 }
 
-QJsonDocument JsonRpcServer::createResponse(const QString& request_id,
+QVariantMap JsonRpcServer::createResponse(const QUuid& request_id,
                                             const QVariant& return_value,
                                             const QString& method_name)
 {
-    QJsonObject res_json_obj {
+    QVariantMap res_json_obj {
         { "id", request_id }
     };
+    res_json_obj["result"] = return_value;
 
-    if (return_value.type() == QVariant::Invalid) {
-        res_json_obj["result"] = QJsonValue();
-    } else if (return_value.type() == QVariant::List) {
-        auto ret_doc = QJsonDocument::fromVariant(return_value);
-        res_json_obj["result"] = ret_doc.array();
-    } else if (return_value.type() == QVariant::Map) {
-        auto ret_doc = QJsonDocument::fromVariant(return_value);
-        res_json_obj["result"] = ret_doc.object();
-    } else if (return_value.type() == QVariant::Int) {
-        res_json_obj["result"] = return_value.toInt();
-    } else if (return_value.type() == QVariant::LongLong) {
-        res_json_obj["result"] = return_value.toLongLong();
-    } else if (return_value.type() == QVariant::Double) {
-        res_json_obj["result"] = return_value.toDouble();
-    } else if (return_value.type() == QVariant::Bool) {
-        res_json_obj["result"] = return_value.toBool();
-    } else if (return_value.type() == QVariant::String) {
-        res_json_obj["result"] = return_value.toString();
-    } else {
-        auto msg =
-            QString("method '%1' has unknown return type: %2")
-            .arg(method_name)
-            .arg(return_value.type());
-        logError(msg);
-        return createErrorResponse(request_id,
-                                   JsonRpcError::EC_InvalidRequest,
-                                   msg);
-    }
-
-    return QJsonDocument(res_json_obj);
+    return res_json_obj;
 }
 
-QJsonDocument JsonRpcServer::createErrorResponse(const QString& request_id,
+QVariantMap JsonRpcServer::createErrorResponse(const QUuid& request_id,
                                                  int code,
                                                  const QString& message)
 {
-    QJsonObject error_object {
+    QVariantMap error_object {
         { "code", code },
         { "message", message }
     };
 
-    QJsonObject res_json_obj {
+    QVariantMap res_json_obj {
         { "error", error_object },
         { "id", request_id }
     };
-    return QJsonDocument(res_json_obj);
+    return res_json_obj;
 }
 
 void JsonRpcServer::logInfo(const QString& msg)

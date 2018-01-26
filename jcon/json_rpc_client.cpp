@@ -6,6 +6,7 @@
 
 #include <QUuid>
 #include <QCoreApplication>
+#include "../msgpack/msgpack.h"
 
 #include <memory>
 
@@ -37,7 +38,7 @@ JsonRpcClient::JsonRpcClient(std::shared_ptr<JsonRpcSocket> socket,
     connect(m_endpoint.get(), &JsonRpcEndpoint::socketError,
             this, &JsonRpcClient::socketError);
 
-    connect(m_endpoint.get(), &JsonRpcEndpoint::jsonObjectReceived,
+    connect(m_endpoint.get(), &JsonRpcEndpoint::requestReceived,
             this, &JsonRpcClient::jsonResponseReceived);
 }
 
@@ -111,15 +112,15 @@ JsonRpcClient::doCallExpandArgs(const QString& method,
                                 const QVariantList& args)
 {
     std::shared_ptr<JsonRpcRequest> request;
-    QJsonObject req_json_obj;
+    QVariantMap req_json_obj;
     std::tie(request, req_json_obj) = prepareCall(method);
 
     if (!args.empty()) {
-        req_json_obj["params"] = QJsonArray::fromVariantList(args);
+        req_json_obj["params"] = args;
     }
 
     m_logger->logInfo(formatLogMessage(method, args, async, request->id()));
-    m_endpoint->send(QJsonDocument(req_json_obj));
+    m_endpoint->send(req_json_obj);
 
     return request;
 }
@@ -139,25 +140,24 @@ void JsonRpcClient::verifyConnected(const QString& method)
     }
 }
 
-std::pair<std::shared_ptr<JsonRpcRequest>, QJsonObject>
+std::pair<std::shared_ptr<JsonRpcRequest>, QVariantMap>
 JsonRpcClient::prepareCall(const QString& method)
 {
     RequestId id=QUuid::createUuid();
     std::shared_ptr<JsonRpcRequest> request = std::make_shared<JsonRpcRequest>(this, id);
     m_outstanding_requests[id] = request;
     ++m_outstanding_request_count;
-    QJsonObject req_json_obj = createRequestJsonObject(method, id);
+    QVariantMap req_json_obj = createRequestJsonObject(method, id);
     return std::make_pair(request, req_json_obj);
 }
 
-QJsonObject JsonRpcClient::createRequestJsonObject(const QString& method,
+QVariantMap JsonRpcClient::createRequestJsonObject(const QString& method,
                                                    const RequestId &id)
 {
-    return QJsonObject {
+    return QVariantMap {
         { "method", method },
-        { "id", id.toString() }
+        { "id", id }
     };
-    QJsonObject obj;
 }
 
 bool JsonRpcClient::connectToServer(const QString& host, int port)
@@ -206,10 +206,10 @@ int JsonRpcClient::serverPort() const
     return m_endpoint->peerPort();
 }
 
-void JsonRpcClient::jsonResponseReceived(const QJsonObject& response)
+void JsonRpcClient::jsonResponseReceived(const QVariantMap& response)
 {
-    RequestId id = QUuid(response.value("id").toString());
-    if (response.value("error").isObject()) {
+    RequestId id = response["id"].toUuid();
+    if (response.value("error").isValid()) {
         int code;
         QString msg;
         QVariant data;
@@ -230,13 +230,7 @@ void JsonRpcClient::jsonResponseReceived(const QJsonObject& response)
 
         return;
     }
-
-    if (response["result"].isUndefined()) {
-        logError("result is undefined");
-        return;
-    }
-
-    QVariant result = response.value("result").toVariant();
+    QVariant result = response.value("result");
 
     auto it = m_outstanding_requests.find(id);
     if (it == m_outstanding_requests.end()) {
@@ -249,15 +243,15 @@ void JsonRpcClient::jsonResponseReceived(const QJsonObject& response)
     --m_outstanding_request_count;
 }
 
-void JsonRpcClient::getJsonErrorInfo(const QJsonObject& response,
+void JsonRpcClient::getJsonErrorInfo(const QVariantMap& response,
                                      int& code,
                                      QString& message,
                                      QVariant& data)
 {
-    QJsonObject error = response["error"].toObject();
+    QVariantMap error = response["error"].toMap();
     code = error["code"].toInt();
-    message = error["message"].toString("unknown error");
-    data = error.value("data").toVariant();
+    message = error["message"].toString();
+    data = error.value("data");
 }
 
 QString JsonRpcClient::formatLogMessage(const QString& method,
