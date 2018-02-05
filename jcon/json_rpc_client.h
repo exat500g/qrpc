@@ -74,8 +74,6 @@ private slots:
     void jsonResponseReceived(const QVariantMap &obj);
 
 private:
-    static const QString InvalidRequestId;
-
     static QString formatLogMessage(const QString& method,
                                     const QVariantList& args,
                                     bool async,
@@ -157,7 +155,7 @@ JsonRpcClient::doCall(const QString& method, bool async, Ts&&... args)
 
     QVariantList param_list;
     convertToQVariantList(param_list, std::forward<Ts>(args)...);
-    req_obj["params"] = param_list;
+    req_obj["p"] = param_list;
 
     m_logger->logInfo(
         formatLogMessage(method, param_list, async, request->id().toString()));

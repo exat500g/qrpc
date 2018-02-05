@@ -79,7 +79,7 @@ void invokeMethodSync(jcon::JsonRpcClient* rpc_client)
 
 void invokeStringMethodAsync(jcon::JsonRpcClient* rpc_client)
 {
-    auto req = rpc_client->callAsync("printMessage", "hello, world");
+    auto req = rpc_client->callAsync("printMessage", "hello啊所的发个");
 
     req->connect(req.get(), &jcon::JsonRpcRequest::result,
                  [](const QVariant& result) {

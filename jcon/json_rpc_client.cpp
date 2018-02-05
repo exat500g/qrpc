@@ -12,8 +12,6 @@
 
 namespace jcon {
 
-const QString JsonRpcClient::InvalidRequestId = "";
-
 JsonRpcClient::JsonRpcClient(std::shared_ptr<JsonRpcSocket> socket,
                              QObject* parent,
                              std::shared_ptr<JsonRpcLogger> logger,
@@ -116,7 +114,7 @@ JsonRpcClient::doCallExpandArgs(const QString& method,
     std::tie(request, req_json_obj) = prepareCall(method);
 
     if (!args.empty()) {
-        req_json_obj["params"] = args;
+        req_json_obj["p"] = args;
     }
 
     m_logger->logInfo(formatLogMessage(method, args, async, request->id()));

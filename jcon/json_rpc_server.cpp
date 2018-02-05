@@ -45,7 +45,7 @@ void JsonRpcServer::requestReceived(const QVariantMap& request, QObject* socket)
         return;
     }
     QUuid request_id = request.value("i").toUuid();
-    QVariant params = request.value("params");
+    QVariant params = request.value("p");
 
     QVariant return_value;
     if (!dispatch(method_name, params, return_value)) {
